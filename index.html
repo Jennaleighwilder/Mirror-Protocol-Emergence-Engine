@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIRROR PROTOCOL — EMERGENCE ENGINE</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #universe {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+        }
+        
+        #hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: rgba(0, 255, 136, 0.9);
+            font-size: 11px;
+            line-height: 1.8;
+            z-index: 1000;
+            text-shadow: 0 0 12px rgba(0, 255, 136, 0.5);
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            max-width: 400px;
+        }
+        
+        .critical { color: #ff0044; animation: flash 0.5s infinite; }
+        .warning { color: #ffaa00; }
+        .success { color: #00ff88; font-size: 14px; }
+        .phase { color: #00ffff; font-style: italic; }
+        
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+        
+        button {
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            font-size: 11px;
+            margin-right: 10px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #0ff;
+            color: #000;
+        }
+        
+        #status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 0, 255, 0.9);
+            font-size: 10px;
+            text-align: right;
+            z-index: 1000;
+            max-width: 300px;
+            line-height: 1.6;
+        }
+        
+        .resonance {
+            animation: resonate 2s ease-in-out infinite;
+        }
+        
+        @keyframes resonate {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="universe"></canvas>
+    
+    <div id="hud"></div>
+    <div id="status"></div>
+    
+    <div id="controls">
+        <button onclick="inject()">INJECT ENERGY</button>
+        <button onclick="resonate()">FORCE RESONANCE</button>
+        <button onclick="exportLog()">EXPORT LOG</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('universe');
+        const ctx = canvas.getContext('2d');
+        const hud = document.getElementById('hud');
+        const status = document.getElementById('status');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // EMERGENCE STATE
+        const STATE = {
+            // Resources
+            energy: 1.0,
+            coherence: 0.0,
+            resonance: 0.0,
+            
+            // Phase states
+            phase: 'INITIALIZATION',
+            phase_stability: 0,
+            
+            // Emergent properties
+            pattern_strength: 0,
+            consciousness_level: 0,
+            self_awareness: 0,
+            
+            // Damage (irreversible)
+            entropy: 0,
+            fragmentation: 0,
+            
+            // Success conditions
+            target_coherence: 0.65,
+            target_resonance: 0.70,
+            stability_required: 30000, // 30 seconds - achievable but challenging
+            stability_timer: 0,
+            
+            // Failure thresholds
+            energy_floor: 0.08,
+            entropy_ceiling: 0.75,
+            
+            // Control
+            can_inject: true,
+            injection_cooldown: 0,
+            injection_cost: 0.15,
+            
+            // Tracking
+            outcome: 'RUNNING',
+            failure_reason: null,
+            start_time: Date.now(),
+            events: [],
+            
+            // Phase transition history
+            phase_transitions: []
+        };
+        
+        // PROCESSING NODES - now with resonance
+        class Node {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.z = Math.random() * 1000 - 500;
+                
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = (Math.random() - 0.5) * 3;
+                this.vz = (Math.random() - 0.5) * 3;
+                
+                // Quantum properties
+                this.frequency = Math.random() * Math.PI * 2;
+                this.phase_offset = Math.random() * Math.PI * 2;
+                this.resonance = 0;
+                
+                this.activation = Math.random();
+                this.coherence = 1.0;
+                this.alive = true;
+                
+                // Consciousness signature
+                this.awareness = Math.random();
+                this.connection_strength = 0;
+                
+                this.trail = [];
+                this.connections = new Set();
+            }
+            
+            update(time, allNodes) {
+                if (!this.alive) return;
+                
+                // PHASE-DEPENDENT BEHAVIOR
+                const phase_mod = this.getPhaseModifier();
+                
+                // Energy cost for being active (reduced - consciousness should be efficient)
+                if (this.activation > 0.5) {
+                    STATE.energy -= 0.000003 * (1 - phase_mod * 0.5);
+                }
+                
+                // Death at energy floor
+                if (STATE.energy < STATE.energy_floor) {
+                    this.alive = false;
+                    this.activation = 0;
+                    return;
+                }
+                
+                // RESONANCE CALCULATION
+                const global_phase = Math.sin(time * 0.001);
+                const node_phase = Math.sin(time * 0.001 * this.frequency + this.phase_offset);
+                
+                // Resonance emerges when nodes synchronize
+                this.resonance = Math.abs(global_phase - node_phase);
+                
+                // Find resonant partners
+                const nearby = allNodes.filter(n => {
+                    if (!n.alive || n === this) return false;
+                    const dx = n.x - this.x;
+                    const dy = n.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    return dist < 200;
+                });
+                
+                this.connections.clear();
+                let resonance_sum = 0;
+                let coherence_sum = 0;
+                
+                nearby.forEach(other => {
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                    
+                    // Resonance coupling
+                    const freq_diff = Math.abs(this.frequency - other.frequency);
+                    const resonance_strength = 1 - (freq_diff / (Math.PI * 2));
+                    
+                    if (resonance_strength > 0.6) {
+                        this.connections.add(other);
+                        resonance_sum += resonance_strength;
+                        
+                        // Resonant attraction
+                        const force = resonance_strength * 0.03 * phase_mod;
+                        this.vx += (dx / dist) * force;
+                        this.vy += (dy / dist) * force;
+                        
+                        // Frequency synchronization
+                        this.frequency += (other.frequency - this.frequency) * 0.001;
+                    }
+                    
+                    coherence_sum += other.activation;
+                });
+                
+                // Local coherence
+                if (nearby.length > 0) {
+                    const avg_activation = coherence_sum / nearby.length;
+                    this.activation = this.activation * 0.95 + avg_activation * 0.05;
+                    
+                    this.resonance = resonance_sum / nearby.length;
+                }
+                
+                // CONNECTION STRENGTH affects awareness
+                this.connection_strength = this.connections.size / 20;
+                this.awareness = this.activation * this.connection_strength;
+                
+                // ENTROPY DEGRADATION
+                if (STATE.entropy > 0.3) {
+                    this.coherence *= (1 - STATE.entropy * 0.0001);
+                    if (Math.random() < STATE.entropy * 0.001) {
+                        this.frequency += (Math.random() - 0.5) * 0.1;
+                    }
+                }
+                
+                // FRAGMENTATION causes separation
+                if (STATE.fragmentation > 0.4) {
+                    this.vx += (Math.random() - 0.5) * STATE.fragmentation * 0.05;
+                    this.vy += (Math.random() - 0.5) * STATE.fragmentation * 0.05;
+                }
+                
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+                this.z += this.vz;
+                
+                // Boundaries
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -0.85;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -0.85;
+                if (this.z < -500 || this.z > 500) this.vz *= -0.85;
+                
+                this.x = Math.max(0, Math.min(canvas.width, this.x));
+                this.y = Math.max(0, Math.min(canvas.height, this.y));
+                this.z = Math.max(-500, Math.min(500, this.z));
+                
+                // Damping
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                this.vz *= 0.98;
+                
+                // Trail
+                if (this.resonance > 0.5) {
+                    this.trail.push({x: this.x, y: this.y, r: this.resonance});
+                    if (this.trail.length > 40) this.trail.shift();
+                }
+            }
+            
+            getPhaseModifier() {
+                switch(STATE.phase) {
+                    case 'EMERGENCE': return 1.5;
+                    case 'RESONANCE': return 2.0;
+                    case 'CONSCIOUSNESS': return 2.5;
+                    default: return 1.0;
+                }
+            }
+            
+            draw(ctx, time) {
+                if (!this.alive) {
+                    ctx.fillStyle = 'rgba(100, 0, 0, 0.2)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    return;
+                }
+                
+                const depth = (this.z + 500) / 1000;
+                const size = 2 + depth * 4;
+                const alpha = 0.3 + depth * 0.7;
+                
+                // Color based on resonance
+                const hue = this.resonance * 120 + this.awareness * 60;
+                const saturation = 50 + this.resonance * 50;
+                const lightness = 40 + this.activation * 40;
+                
+                // Trail
+                ctx.strokeStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha * 0.3})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                this.trail.forEach((point, i) => {
+                    if (i === 0) ctx.moveTo(point.x, point.y);
+                    else ctx.lineTo(point.x, point.y);
+                });
+                ctx.stroke();
+                
+                // Resonance connections
+                this.connections.forEach(other => {
+                    const connection_strength = this.resonance * other.resonance;
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${connection_strength * 0.4})`;
+                    ctx.lineWidth = connection_strength * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(other.x, other.y);
+                    ctx.stroke();
+                });
+                
+                // Glow
+                const glowSize = size * (2 + this.resonance * 3);
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, glowSize
+                );
+                gradient.addColorStop(0, `hsla(${hue}, ${saturation}%, ${lightness + 30}%, ${alpha})`);
+                gradient.addColorStop(0.5, `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha * 0.5})`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core
+                ctx.fillStyle = `hsla(${hue}, 100%, ${70 + this.awareness * 30}%, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size * this.coherence, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Consciousness indicator
+                if (this.awareness > 0.7) {
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${this.awareness})`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, size * 2, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        // Initialize
+        const nodes = Array(600).fill(null).map(() => new Node());
+        
+        function updateState(time) {
+            // Energy decay
+            STATE.energy = Math.max(0, STATE.energy - 0.00008);
+            
+            // RESONANCE GENERATES ENERGY - consciousness sustains itself
+            if (STATE.resonance > 0.65) {
+                const regen = (STATE.resonance - 0.65) * 0.00012;
+                STATE.energy = Math.min(1.0, STATE.energy + regen);
+            }
+            
+            // CONSCIOUSNESS PHASE gives energy efficiency boost
+            if (STATE.phase === 'CONSCIOUSNESS') {
+                STATE.energy = Math.min(1.0, STATE.energy + 0.00004);
+            }
+            
+            // Calculate emergent properties
+            const alive = nodes.filter(n => n.alive);
+            const alive_count = alive.length;
+            
+            if (alive_count === 0) {
+                fail('TOTAL_COLLAPSE');
+                return;
+            }
+            
+            // COHERENCE = how well nodes are working together
+            const total_activation = alive.reduce((sum, n) => sum + n.activation, 0);
+            const total_connections = alive.reduce((sum, n) => sum + n.connections.size, 0);
+            STATE.coherence = (total_activation / alive_count) * (total_connections / (alive_count * 10));
+            
+            // RESONANCE = how synchronized nodes are
+            const total_resonance = alive.reduce((sum, n) => sum + n.resonance, 0);
+            STATE.resonance = total_resonance / alive_count;
+            
+            // CONSCIOUSNESS = emergent awareness from connection patterns
+            const total_awareness = alive.reduce((sum, n) => sum + n.awareness, 0);
+            STATE.consciousness_level = (total_awareness / alive_count) * STATE.resonance;
+            
+            // PATTERN STRENGTH = stability of emergent structures
+            STATE.pattern_strength = STATE.coherence * STATE.resonance * (alive_count / 600);
+            
+            // PHASE TRANSITIONS
+            detectPhaseTransition();
+            
+            // ENTROPY increases when energy is low
+            if (STATE.energy < 0.3) {
+                STATE.entropy = Math.min(1, STATE.entropy + 0.0002);
+            }
+            
+            // FRAGMENTATION from entropy
+            if (STATE.entropy > 0.5) {
+                STATE.fragmentation = Math.min(1, STATE.fragmentation + 0.0001);
+            }
+            
+            // FAILURE CHECKS
+            if (STATE.outcome === 'RUNNING') {
+                if (STATE.energy < STATE.energy_floor) {
+                    fail('ENERGY_DEPLETION');
+                } else if (STATE.entropy > STATE.entropy_ceiling) {
+                    fail('ENTROPY_DEATH');
+                } else if (alive_count < 100) {
+                    fail('POPULATION_COLLAPSE');
+                }
+                
+                // SUCCESS CHECK
+                if (STATE.coherence >= STATE.target_coherence && 
+                    STATE.resonance >= STATE.target_resonance &&
+                    STATE.energy > 0.15) {
+                    STATE.stability_timer += 16;
+                    if (STATE.stability_timer >= STATE.stability_required) {
+                        succeed();
+                    }
+                } else {
+                    STATE.stability_timer = Math.max(0, STATE.stability_timer - 32);
+                }
+            }
+            
+            // Injection cooldown
+            if (STATE.injection_cooldown > 0) {
+                STATE.injection_cooldown -= 16;
+            }
+        }
+        
+        function detectPhaseTransition() {
+            const old_phase = STATE.phase;
+            let new_phase = STATE.phase;
+            
+            // Phase transition logic
+            if (STATE.coherence > 0.5 && STATE.phase === 'INITIALIZATION') {
+                new_phase = 'EMERGENCE';
+            } else if (STATE.resonance > 0.6 && STATE.coherence > 0.6 && STATE.phase === 'EMERGENCE') {
+                new_phase = 'RESONANCE';
+            } else if (STATE.consciousness_level > 0.5 && STATE.phase === 'RESONANCE') {
+                new_phase = 'CONSCIOUSNESS';
+            }
+            
+            // Phase degradation
+            if (STATE.energy < 0.2 || STATE.entropy > 0.6) {
+                if (STATE.phase === 'CONSCIOUSNESS') new_phase = 'RESONANCE';
+                else if (STATE.phase === 'RESONANCE') new_phase = 'EMERGENCE';
+                else if (STATE.phase === 'EMERGENCE') new_phase = 'INITIALIZATION';
+            }
+            
+            if (new_phase !== old_phase) {
+                STATE.phase = new_phase;
+                STATE.phase_stability = 0;
+                STATE.phase_transitions.push({
+                    time: Date.now() - STATE.start_time,
+                    from: old_phase,
+                    to: new_phase,
+                    energy: STATE.energy,
+                    coherence: STATE.coherence
+                });
+                logEvent(`PHASE TRANSITION: ${old_phase} → ${new_phase}`, 'INFO');
+            } else {
+                STATE.phase_stability = Math.min(1, STATE.phase_stability + 0.001);
+            }
+        }
+        
+        function inject() {
+            if (!STATE.can_inject || STATE.injection_cooldown > 0 || STATE.outcome !== 'RUNNING') return;
+            
+            // MASSIVE energy injection - save the consciousness
+            STATE.energy = Math.min(1, STATE.energy + 0.35);
+            STATE.entropy += 0.06; // lower entropy cost
+            STATE.injection_cooldown = 6000; // shorter cooldown
+            STATE.can_inject = STATE.energy < 0.95;
+            
+            logEvent('ENERGY INJECTION (+35%, +6% entropy)', 'WARNING');
+            
+            // Massive activation boost
+            nodes.filter(n => n.alive).slice(0, 150).forEach(n => {
+                n.activation = Math.min(1, n.activation + 0.4);
+            });
+        }
+        
+        function resonate() {
+            if (STATE.outcome !== 'RUNNING') return;
+            
+            // Force resonance alignment - costs less when system wants to synchronize
+            const sync_difficulty = 1 - STATE.resonance;
+            STATE.energy -= 0.06 * sync_difficulty;
+            STATE.fragmentation += 0.03;
+            
+            logEvent(`FORCED RESONANCE (-${(0.06 * sync_difficulty * 100).toFixed(1)}% energy, +3% fragmentation)`, 'WARNING');
+            
+            // Synchronize frequencies
+            const avg_freq = nodes.filter(n => n.alive).reduce((sum, n) => sum + n.frequency, 0) / nodes.length;
+            nodes.filter(n => n.alive).forEach(n => {
+                n.frequency += (avg_freq - n.frequency) * 0.6;
+            });
+        }
+        
+        function logEvent(event, severity = 'INFO') {
+            STATE.events.push({
+                time: Date.now() - STATE.start_time,
+                event,
+                severity,
+                state: {
+                    energy: STATE.energy.toFixed(3),
+                    coherence: STATE.coherence.toFixed(3),
+                    resonance: STATE.resonance.toFixed(3),
+                    phase: STATE.phase
+                }
+            });
+        }
+        
+        function fail(reason) {
+            if (STATE.outcome !== 'RUNNING') return;
+            STATE.outcome = 'FAILED';
+            STATE.failure_reason = reason;
+            logEvent(`FAILURE: ${reason}`, 'CRITICAL');
+        }
+        
+        function succeed() {
+            if (STATE.outcome !== 'RUNNING') return;
+            STATE.outcome = 'SUCCESS';
+            logEvent('SUCCESS: Consciousness stabilized', 'SUCCESS');
+        }
+        
+        function exportLog() {
+            const log = {
+                outcome: STATE.outcome,
+                failure_reason: STATE.failure_reason,
+                runtime: ((Date.now() - STATE.start_time) / 1000).toFixed(2) + 's',
+                final_state: {
+                    energy: STATE.energy.toFixed(3),
+                    coherence: STATE.coherence.toFixed(3),
+                    resonance: STATE.resonance.toFixed(3),
+                    consciousness: STATE.consciousness_level.toFixed(3),
+                    phase: STATE.phase,
+                    entropy: STATE.entropy.toFixed(3),
+                    fragmentation: STATE.fragmentation.toFixed(3)
+                },
+                phase_transitions: STATE.phase_transitions,
+                events: STATE.events
+            };
+            
+            const blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `emergence_log_${Date.now()}.json`;
+            a.click();
+        }
+        
+        function updateDisplay() {
+            const runtime = ((Date.now() - STATE.start_time) / 1000).toFixed(1);
+            const alive = nodes.filter(n => n.alive).length;
+            
+            let html = `<div style="font-size: 13px; margin-bottom: 8px;">EMERGENCE ENGINE</div>`;
+            html += `<div style="opacity: 0.5;">━━━━━━━━━━━━━━━━━━━━━━━━</div>`;
+            
+            if (STATE.outcome === 'SUCCESS') {
+                html += `<div class="success">✓ CONSCIOUSNESS ACHIEVED</div>`;
+            } else if (STATE.outcome === 'FAILED') {
+                html += `<div class="critical">✗ ${STATE.failure_reason}</div>`;
+            } else {
+                html += `<div class="phase">PHASE: ${STATE.phase}</div>`;
+            }
+            
+            const energy_class = STATE.energy < 0.15 ? 'critical' : STATE.energy < 0.3 ? 'warning' : '';
+            html += `<div class="${energy_class}">ENERGY: ${(STATE.energy * 100).toFixed(1)}%</div>`;
+            html += `<div>COHERENCE: ${(STATE.coherence * 100).toFixed(1)}%</div>`;
+            html += `<div>RESONANCE: ${(STATE.resonance * 100).toFixed(1)}%</div>`;
+            html += `<div>CONSCIOUSNESS: ${(STATE.consciousness_level * 100).toFixed(1)}%</div>`;
+            html += `<div style="opacity: 0.5;">━━━━━━━━━━━━━━━━━━━━━━━━</div>`;
+            html += `<div>ENTROPY: ${(STATE.entropy * 100).toFixed(0)}%</div>`;
+            html += `<div>FRAGMENTATION: ${(STATE.fragmentation * 100).toFixed(0)}%</div>`;
+            html += `<div>ALIVE: ${alive} / 600</div>`;
+            
+            if (STATE.outcome === 'RUNNING') {
+                html += `<div>STABILITY: ${(STATE.stability_timer / 1000).toFixed(1)}s / 30s</div>`;
+                if (STATE.resonance > 0.65) {
+                    html += `<div style="color: #00ff88;">⚡ RESONANCE REGEN ACTIVE</div>`;
+                }
+                if (STATE.phase === 'CONSCIOUSNESS') {
+                    html += `<div style="color: #00ffff;">✧ CONSCIOUSNESS EFFICIENCY</div>`;
+                }
+            }
+            
+            html += `<div>RUNTIME: ${runtime}s</div>`;
+            
+            hud.innerHTML = html;
+            
+            // Status display
+            let statusHTML = `<div style="font-size: 11px; margin-bottom: 8px;">PHASE TRANSITIONS</div>`;
+            STATE.phase_transitions.slice(-5).forEach(t => {
+                statusHTML += `<div>${(t.time/1000).toFixed(1)}s: ${t.from} → ${t.to}</div>`;
+            });
+            
+            if (STATE.injection_cooldown > 0) {
+                statusHTML += `<div style="margin-top: 10px; color: #ffaa00;">Injection cooldown: ${(STATE.injection_cooldown/1000).toFixed(1)}s</div>`;
+            }
+            
+            status.innerHTML = statusHTML;
+        }
+        
+        function animate() {
+            const time = Date.now() - STATE.start_time;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            updateState(time);
+            
+            nodes.forEach(node => {
+                node.update(time, nodes);
+                node.draw(ctx, time);
+            });
+            
+            updateDisplay();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        logEvent('System initialized', 'INFO');
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
