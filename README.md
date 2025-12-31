@@ -97,3 +97,5 @@ Add comprehensive README
 **Your new site will be at:**
 ```
 https://jennaleighwilder.github.io/Mirror-Protocol-Emergence-Engine/
+
+See ORIGIN.md for authorship, provenance, and licensing context.
